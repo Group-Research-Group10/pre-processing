@@ -1,6 +1,15 @@
+from imutils import face_utils
+import dlib
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
+
+#faceLandmark dat file
+p = "imgProcessing/shape_predictor_68_face_landmarks.dat"
+
+#face detector
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(p)
 
 #test rgb image
 testImg = cv.imread('imgProcessing/TestImage/testFace.jpg',1)
@@ -12,7 +21,7 @@ originalImg = cv.cvtColor(testImg,cv.COLOR_BGR2RGB)
 croppedImg = originalImg[174:530,492:787]
 
 #resized image
-ResizeImg = cv.resize(croppedImg,(400,400))
+ResizeImg = cv.resize(croppedImg,(500,500))
 
 #remove noise
 noiseRemoveImg = cv.medianBlur(ResizeImg, 5)
@@ -21,14 +30,28 @@ noiseRemoveImg = cv.medianBlur(ResizeImg, 5)
 intensityMatrix = np.ones(noiseRemoveImg.shape, dtype='uint8') * 50
 setBrightnessImg = cv.subtract(noiseRemoveImg,intensityMatrix)
 
+#sample Image to get the facial points
+sampleForFacialPoints = cv.subtract(noiseRemoveImg,intensityMatrix)
+
+#Gray Image
 grayImg = cv.cvtColor(setBrightnessImg, cv.COLOR_RGB2GRAY)
 
 
-titles = ["Original Image","Cropped Image","Resized Image","Noise Removed Image","Set Brightness","Gray Image"]
-images =[originalImg,croppedImg,ResizeImg,noiseRemoveImg,setBrightnessImg,grayImg]
+rects = detector(grayImg, 0)
 
-for i in range(6):
-    plt.subplot(2,3,i+1), plt.imshow(images[i],"gray")
+#facial points
+for (i, rect) in enumerate(rects):
+    shape = predictor(grayImg, rect)
+    shape = face_utils.shape_to_np(shape)
+    for (x, y) in shape:
+        FacialPoints = cv.circle(sampleForFacialPoints, (x, y), 2, (0, 255, 0), -1)
+
+
+titles = ["Original Image","Cropped Image","Resized Image 500 x 500","Noise Removed Image","Set Brightness","Gray Image","Facial Points"]
+images =[originalImg,croppedImg,ResizeImg,noiseRemoveImg,setBrightnessImg,grayImg,FacialPoints]
+
+for i in range(7):
+    plt.subplot(2,4,i+1), plt.imshow(images[i],"gray")
     plt.title(titles[i])
     plt.xticks([]), plt.yticks([])
 
